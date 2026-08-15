@@ -15,8 +15,9 @@ COPY . .
 # 3. Install semua dependensi Laravel
 RUN composer install --no-dev --optimize-autoloader
 
-# 4. Beri izin akses folder storage & cache
-RUN chown -R www-data:www-data storage bootstrap/cache
+# 4. Buat folder storage & cache jika belum ada & atur izin 777
+RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache \
+    && chmod -R 777 storage bootstrap/cache
 
 # 5. Jalankan migrasi database otomatis & nyalakan server Laravel
 CMD sh -c "php artisan migrate --force && php artisan serve --host 0.0.0.0 --port ${PORT:-8000}"
