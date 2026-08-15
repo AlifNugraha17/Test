@@ -12,39 +12,45 @@ class TourismSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Seed Categories
-        $medicalCat = Category::create(['slug' => 'medical', 'name' => 'Medical & Diagnostic', 'icon' => 'hospital']);
-        $dentalCat = Category::create(['slug' => 'dental', 'name' => 'Dental Care', 'icon' => 'tooth']);
-        $spaCat = Category::create(['slug' => 'spa', 'name' => 'Wellness & Spa', 'icon' => 'sparkles']);
-        $golfCat = Category::create(['slug' => 'golf', 'name' => 'Golf & Resort', 'icon' => 'flag']);
-        $seafoodCat = Category::create(['slug' => 'culinary', 'name' => 'Seafood Culinary', 'icon' => 'utensils']);
+        // 1. Seed Categories (Idempotent using firstOrCreate)
+        $medicalCat = Category::firstOrCreate(['slug' => 'medical'], ['name' => 'Medical & Diagnostic', 'icon' => 'hospital']);
+        $dentalCat = Category::firstOrCreate(['slug' => 'dental'], ['name' => 'Dental Care', 'icon' => 'tooth']);
+        $spaCat = Category::firstOrCreate(['slug' => 'spa'], ['name' => 'Wellness & Spa', 'icon' => 'sparkles']);
+        $golfCat = Category::firstOrCreate(['slug' => 'golf'], ['name' => 'Golf & Resort', 'icon' => 'flag']);
+        $seafoodCat = Category::firstOrCreate(['slug' => 'culinary'], ['name' => 'Seafood Culinary', 'icon' => 'utensils']);
 
-        // 2. Seed Ferry Terminals
-        $hbTerminal = FerryTerminal::create([
-            'slug' => 'harbour-bay',
-            'name' => 'Harbour Bay Ferry Terminal',
-            'latitude' => 1.1558,
-            'longitude' => 104.0041,
-            'description' => 'Terminal feri utama terdekat dengan kawasan pusat perbelanjaan Nagoya.'
-        ]);
+        // 2. Seed Ferry Terminals (Idempotent using firstOrCreate)
+        $hbTerminal = FerryTerminal::firstOrCreate(
+            ['slug' => 'harbour-bay'],
+            [
+                'name' => 'Harbour Bay Ferry Terminal',
+                'latitude' => 1.1558,
+                'longitude' => 104.0041,
+                'description' => 'Terminal feri utama terdekat dengan kawasan pusat perbelanjaan Nagoya.'
+            ]
+        );
 
-        $bcTerminal = FerryTerminal::create([
-            'slug' => 'batam-centre',
-            'name' => 'Batam Centre Ferry Terminal',
-            'latitude' => 1.1311,
-            'longitude' => 104.0531,
-            'description' => 'Terminal feri di pusat pemerintahan & rumah sakit rujukan utama.'
-        ]);
+        $bcTerminal = FerryTerminal::firstOrCreate(
+            ['slug' => 'batam-centre'],
+            [
+                'name' => 'Batam Centre Ferry Terminal',
+                'latitude' => 1.1311,
+                'longitude' => 104.0531,
+                'description' => 'Terminal feri di pusat pemerintahan & rumah sakit rujukan utama.'
+            ]
+        );
 
-        $npTerminal = FerryTerminal::create([
-            'slug' => 'nongsa',
-            'name' => 'Nongsa Pura Ferry Terminal',
-            'latitude' => 1.1895,
-            'longitude' => 104.1012,
-            'description' => 'Terminal feri eksklusif kawasan pantai & luxury golf resort.'
-        ]);
+        $npTerminal = FerryTerminal::firstOrCreate(
+            ['slug' => 'nongsa'],
+            [
+                'name' => 'Nongsa Pura Ferry Terminal',
+                'latitude' => 1.1895,
+                'longitude' => 104.1012,
+                'description' => 'Terminal feri eksklusif kawasan pantai & luxury golf resort.'
+            ]
+        );
 
-        // 3. Seed Places with PostGIS Geometries
+        // 3. Seed Places with PostGIS Geometries (Idempotent using updateOrCreate)
         $placesData = [
             [
                 'category_id' => $medicalCat->id,
@@ -101,14 +107,18 @@ class TourismSeeder extends Seeder
         ];
 
         foreach ($placesData as $data) {
-            $place = Place::create($data);
+            $place = Place::updateOrCreate(['name' => $data['name']], $data);
             // Insert Spatial Geometry Point for PostGIS if using pgsql
             if (DB::getDriverName() === 'pgsql') {
-                DB::statement("UPDATE places SET location = ST_SetSRID(ST_MakePoint(?, ?), 4326) WHERE id = ?", [
-                    $data['longitude'],
-                    $data['latitude'],
-                    $place->id
-                ]);
+                try {
+                    DB::statement("UPDATE places SET location = ST_SetSRID(ST_MakePoint(?, ?), 4326) WHERE id = ?", [
+                        $data['longitude'],
+                        $data['latitude'],
+                        $place->id
+                    ]);
+                } catch (\Throwable $e) {
+                    // Safe fallback if PostGIS extension is not active
+                }
             }
         }
     }
