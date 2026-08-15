@@ -19,5 +19,5 @@ RUN composer install --no-dev --optimize-autoloader
 RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache database \
     && chmod -R 777 storage bootstrap/cache database
 
-# 5. Jalankan migrasi database otomatis & nyalakan server Laravel
-CMD sh -c "touch database/database.sqlite && php artisan migrate --force && php artisan serve --host 0.0.0.0 --port ${PORT:-8000}"
+# 5. Jalankan migrasi database otomatis, seeding, & nyalakan server Laravel
+CMD sh -c "touch database/database.sqlite && php artisan migrate --force && php artisan db:seed --class=TourismSeeder --force && php artisan serve --host 0.0.0.0 --port ${PORT:-8000}"
