@@ -440,6 +440,8 @@ const openBookingModal = (place) => {
 // Real-Time Exchange Rate Fetcher
 let rateInterval = null
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+
 const fetchLiveExchangeRate = async () => {
   try {
     const res = await fetch('https://open.er-api.com/v6/latest/SGD')
@@ -456,7 +458,7 @@ const fetchLiveExchangeRate = async () => {
 
   // Fallback to backend API
   try {
-    const backendRes = await fetch('/api/exchange-rate')
+    const backendRes = await fetch(`${API_BASE_URL}/api/exchange-rate`)
     if (backendRes.ok) {
       const bData = await backendRes.json()
       if (bData && bData.rate) {
@@ -470,7 +472,7 @@ const fetchLiveExchangeRate = async () => {
 
 const fetchPlacesFromBackend = async () => {
   try {
-    const res = await fetch('/api/places')
+    const res = await fetch(`${API_BASE_URL}/api/places`)
     if (res.ok) {
       const result = await res.json()
       if (result && result.data && result.data.length > 0) {

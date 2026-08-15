@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://zentura-api.onrender.com/api/:path*"
+    }
+  ]
+}
